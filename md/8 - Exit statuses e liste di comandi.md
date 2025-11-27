@@ -29,3 +29,9 @@ Gli elementi della lista possono essere di vario tipo:
 - Raggruppamento di comandi: `( cat file1.c ; cat file2.c )`
 - Espressione condizionale: `[[ -e file.txt && $1 -gt 13 ]]`
 L'*exit status* di una lista di comandi **è determinato dall'ultimo comando della lista che viene eseguito**. Non è sempre detto che l'ultimo comando della lista sia quello che restituisce l'exit status, in quanto potrebbe avvenire che i risultati di comandi precedenti dipendano dall'esito di altri comandi precedenti, tutti quanti possono fallire. 
+
+Le sequenze di comandi possono essere **condizionali o non condizionali** in base ai metacaratteri usati in concatenazione:
+- Le sequenze *non condizionali* sono sequenze di comandi separati dal metacarattere `;`. Vengono eseguiti in sequenza senza controllare l'esito dei comandi precedenti.
+- Le sequenze *condizionali* sono sequenze di comandi che vengono eseguiti sulla base dell'*exit code* del/dei comandi precedenti;
+	- Se separati da **doppia pipe `||`**, il comando successivo a queste ultime viene eseguito se il primo termina con un *exit code* **diverso da 0**.
+	- Se separati da **doppio and `&&`**, il comando successivo a questi ultimi viene eseguito se il comando precedente termina con un *exit code* **uguale a 0**.
