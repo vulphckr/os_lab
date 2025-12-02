@@ -29,5 +29,7 @@ In entrambe le sintassi le wildcards **vengono valutate**. Per disabilitare la l
 - ***Quoting a singoli apici `''`***: La stringa quotata tra singoli apici viene interpretata così com'è, senza effettuare operazioni di sostituzione o espansioni di wildcards. 
 
 ```bash
-
+VAR=Ciao!
+echo "${VAR} Come stai? `ls`" # Output: Ciao! Come stai? <Lista di file>
+echo '${VAR} Come stai? `ls`' # Output: ${VAR} Come stai? `ls`
 ```
