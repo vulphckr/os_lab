@@ -76,3 +76,82 @@ Possiamo generalizzare gli operatori `>` e `<` per specificare da quale file des
 program1 | program2
 ```
 Cosa **fondamentale** della pipe è che se a sinistra o a destra della pipe sono presenti **sequenze di comandi** o **cicli iterativi** tali istruzioni sono ***eseguire in una shell figlia***.
+
+##### Ridirezionamento di stream già definite tramite file descriptor
+Se una `bash` ha due stream di dati aperti (entrambi di *output* o di *input*), ciascuno ha un valore di **file descriptor** N e M, è possibile redirezionare lo stream di file descriptor N in quello con file descriptor M tramite la sintassi
+```bash
+N>&M
+```
+Quando il comando precedente a questa operazione viene eseguito, ciò che normalmente verrebbe scritto in N **verrà scritto in M**.
+
+***Si faccia attenzione all'uso di `>` e `>&`***:
+- `>` redirige a un **file**, non a una **stream di dati**: il nome posto dopo a `>` definisce il ***nome di un file***.
+- `>&` redirige a una **stream di dati**, non a un file: ciò che è posto dopo a `>&` definisce il ***file descriptor della stream***.
+
+L'ordine di ridirezionamento è **fondamentale**:
+```bash
+ls . 2>error.txt 1>&2
+
+ls . 1>&2 2>error.txt
+```
+- Primo comando: lo standard error di `ls .` viene rediretto al file `error.txt`; dopodiché lo stream di dati dello standard output viene rediretto allo stream di dati con file descriptor 2, il quale ora punta a `error.txt`: risulta **che stdout e stderr puntano e scrivono entrambi su `output.txt`**.
+- Secondo comando: lo standard output di `ls .` viene rediretto allo stream di dati con file descriptor 2, ossia lo standard error; dopodiché lo stream di dati dello standard error viene rediretto al file `error.txt`: risulta che **lo standard output scriverà su video** (in particolare sulla stream di dati dello standard error) **mentre lo standard error viene scritto su `output.txt`**.
+
+È possibile utilizzare l'operatore `>&` per redirezionare degli stream di dati allo standard input, in modo che **siano utilizzabili tramite pipe `|`**.
+```bash
+ls filechenonesiste.txt 2>&1 | grep such
+# Lo stderr di ls viene rediretto allo stdout: in questo modo gli errori possono essere passati al comando successivo alla pipe!
+```
+L'operatore composto `|&` rende possibile passare al comando successivo ad esso sia lo **standard output che lo standard error**.
+
+È bene notare i tempi di esecuzione di una sequenza di comandi:
+- Se separati da `;` vengono eseguiti uno dopo l'altro - si aspetta che il primo finisca, poi si esegue il successivo
+- Se separati da `|` vengono eseguiti **contemporaneamente**, redirigendo lo standard output del primo come standard input del secondo
+- Se separati da `|&` vengono eseguiti **contemporaneamente** redirigendo sia standard output che standard error del primo come standard input del secondo.
+
+È possibile effettuare ridirezionamenti per **blocchi di comando** quali `for`, `while`, `if-else`, i quali eseguiranno il ridirezionamento ***per ogni istruzione presente all'interno del blocco***. 
+```bash
+NUM=1
+echo "${NUM}"
+while (( "${NUM}" <= "3" )) ; do
+	echo "${NUM}"
+	((NUM=${NUM}+1))
+done > pippo.txt
+echo "${NUM}"
+```
+In questo caso `pippo.txt` sarà lo standard output per le operazioni di `echo` interne al `while`.
+
+##### Redirect "Here documents" e "Here strings"
+
+Utilizzando l'operatore `<<` seguito da una parola, allora si possono specificare **una serie di stringhe** che verranno usate come input per una specifica istruzione o un blocco di istruzioni. La parola successiva a `<<` viene usata come ***parola terminatrice*** per tali stringhe.
+```bash
+while read A B C ; do
+	echo $B
+done << FINE
+uno due tre quattro
+alfa beta gamma
+gatto cane
+FINE
+echo ciao
+
+# Output: due beta cane ciao
+```
+Questo è un ridirezionamento di tipo "Here documents", ed è usato per **redirezionare stringhe senza specificare un file**. È possibile anche espandere variabili tra le stringhe disponibili.
+
+Tramite l'operatore `<<<` si specifica invece **un unico argomento** che deve essere utilizzato come input per una specifica istruzione o blocco di istruzioni.
+
+```bash
+read A B C <<< alfa
+echo 1 $A 2 $B 3 $C
+# Output: 1 alfa 2 3
+
+read A B C <<< "alfa beta gamma"
+echo 1 $A 2 $B 3 $C
+# Output 1 alfa 2 beta 3 gamma
+
+read A B C <<< alfa beta gamma
+echo 1 $A 2 $B 3 $C
+# Output 1 alfa 2 3 - occhio agli argomenti!
+```
+
+Anche in questo caso è possibile espandere variaibli. 
